@@ -20,9 +20,14 @@ const common = {
  },
  module: {
    loaders: [{
-     test: /\.less$/,
-     loader: 'style!css!less',
-     include: PATHS.app
+     test: /\.(css|less)$/i,
+     loader: "style!css!less"
+    },
+   { test: /\.(jpe?g|png|gif)$/i,
+     loader:"file" },
+   {
+     test: /\.json$/,
+     loader: 'json'
    },
    {
      test: /\.js$/,
