@@ -15,69 +15,39 @@ const topojson = require('topojson');
 const Datamap = require('datamaps/dist/datamaps.tur.js');
 const turJSON = require("./tur.topo.json");
 
-let curGender = maleJSON;
-let curYear = 1914;
+let curGender = maleJSON ;
+let curYear = 1920;
+let topNames;
+let curMapPerc;
 
-const width = 1100;
-const height = 460;
-let curMapPerc = {};
-for (var city in femaleJSON[curYear][0]) {
-  console.log(femaleJSON[curYear][0][city])
-  let name = femaleJSON[curYear][city]
-  console.log(curMapPerc[name])
-  if (curMapPerc[name] === 'undefined'){
-    let obj = {
-      name : name,
-      count: 1
-    }
-    curMapPerc[name] = obj;
-  }else {
-    console.log(curMapPerc[name])
-  }
-}
-console.log(curMapPerc)
+const width = 1030;
+const height = 480;
+const Colors = [
+  '#ffb4b9','#ffd3cb','#fff1d9','#ecfbd2',
+'#c9f1bb','#aee5ac','#95d6a1','#7fc998',
+'#6bba91','#56ab8b','#429d87','#2a8e83','#008080',
+'#8b0000','#a80e28','#c02845','#d54261']
 
-
-const sha1 = function (str1){
-    for (
-      var blockstart = 0,
-        i = 0,
-        W = [],
-        A, B, C, D, F, G,
-        H = [A=0x67452301, B=0xEFCDAB89, ~A, ~B, 0xC3D2E1F0],
-        word_array = [],
-        temp2,
-        s = unescape(encodeURI(str1)),
-        str_len = s.length;
-
-      i <= str_len;
-    ){
-      word_array[i >> 2] |= (s.charCodeAt(i)||128) << (8 * (3 - i++ % 4));
-    }
-    word_array[temp2 = ((str_len + 8) >> 2) | 15] = str_len << 3;
-
-    for (; blockstart <= temp2; blockstart += 16) {
-      A = H; i = 0;
-
-      for (; i < 80;
-        A = [[
-          (G = ((s = A[0]) << 5 | s >>> 27) + A[4] + (W[i] = (i<16) ? ~~word_array[blockstart + i] : G << 1 | G >>> 31) + 1518500249) + ((B = A[1]) & (C = A[2]) | ~B & (D = A[3])),
-          F = G + (B ^ C ^ D) + 341275144,
-          G + (B & C | B & D | C & D) + 882459459,
-          F + 1535694389
-        ][0|((i++) / 20)] | 0, s, B << 30 | B >>> 2, C, D]
-      ) {
-        G = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16];
+const arrangeDataset = function(curGender){
+  topNames = {};
+  curMapPerc = {};
+  for (var year in curGender) {
+    let aYear = curGender[year][0]
+    for (var city in aYear) {
+      if (curMapPerc.hasOwnProperty(aYear[city])){
+        let result = curMapPerc[aYear[city]] + 1;
+        curMapPerc[aYear[city]] = result;
+      } else {
+        curMapPerc[aYear[city]] = 1;
       }
-
-      for(i = 5; i; ) H[--i] = H[i] + A[i] | 0;
+      curMapPerc[year]
     }
-
-    for(str1 = ''; i < 40; )str1 += (H[i >> 3] >> (7 - i++ % 8) * 4 & 15).toString(16);
-    return str1;
-  };
-
-const colorHash = new ColorHash();
+  }
+  topNames = Object.keys(curMapPerc);
+  topNames = topNames.sort((a, b) => {
+    return curMapPerc[b] -  curMapPerc[a];
+  });
+}
 
 $('#year').val(curYear);
 
@@ -95,32 +65,33 @@ window.increment = function(e,year) {
         year.value = parseInt(year.value) - 1;
     }
     d3.selectAll("svg").remove();
-    updateYear(year.value)
+    Draw(year.value)
     return false;
 };
 
-window.onload = function(){updateYear(curYear);}
+window.onload = function(){
+  arrangeDataset(curGender);
+  Draw(curYear);
+}
+let svg = d3.select("#container").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("class", 'map-container');
+let subunits = topojson.feature(turJSON, turJSON.objects.tur);
+let projection = d3.geo.mercator()
+                  .center([35, 34.5])
+                  .scale(3000)
+                  .translate([width/2, height + 50]);
 
-const updateYear = function(year){
+let path = d3.geo.path()
+  .projection(projection);
+
+const Draw = function(year){
   $('#year').value = year;
   curYear = year;
-  let svg = d3.select("#container").append("svg")
-      .attr("width", width)
-      .attr("height", height);
-
-  let subunits = topojson.feature(turJSON, turJSON.objects.tur);
-  let projection = d3.geo.mercator()
-                    .center([35, 34.5])
-                    .scale(3000)
-                    .translate([width/2-50, height+50]);
-
-  let path = d3.geo.path()
-    .projection(projection);
-
   svg.append("path")
     .datum(subunits)
     .attr("d", path);
-
 
   svg.selectAll(".subunit")
       .data(topojson.feature(turJSON, turJSON.objects.tur).features)
@@ -134,8 +105,10 @@ const updateYear = function(year){
       .style("fill", function(d){
         let cityName = d.properties.name;
         if (cityName){
-          if (curGender[curYear][0][cityName.toUpperCase()]){
-            return colorHash.hex(curGender[curYear][0][cityName.toUpperCase()]);
+          let name = curGender[curYear][0][cityName.toUpperCase()]
+          if (name){
+            console.log(name)
+            return Colors[topNames.indexOf(name)%17]
           }else {
             return 'yellow'
           }
@@ -163,22 +136,70 @@ const updateYear = function(year){
       .attr('font-size','6pt')
       .style("fill", 'black')
 }
+
+const changeColor = function(year) {
+    d3.selectAll("text").remove();
+  curYear = year;
+  svg.selectAll(".subunit")
+      .data(topojson.feature(turJSON, turJSON.objects.tur).features)
+      .transition()
+      .style("fill", function(d){
+        let cityName = d.properties.name;
+        if (cityName){
+          let name = curGender[curYear][0][cityName.toUpperCase()]
+          if (name){
+            return Colors[topNames.indexOf(name)%17];
+          }else {
+            return 'yellow'
+          }
+        }
+      });
+
+      svg.selectAll(".path")
+          .data(topojson.feature(turJSON, turJSON.objects.tur).features)
+          .enter()
+          .append("text")
+          .text(function(d){
+            let cityName = d.properties.name;
+            if (cityName){
+              let result = curGender[curYear][0][cityName.toUpperCase()]
+             return result;
+            }
+          })
+          .transition(1000)
+          .attr("x", function(d){
+              return path.centroid(d)[0];
+          })
+          .attr("y", function(d){
+              return  path.centroid(d)[1];
+          })
+          .attr("text-anchor","middle")
+          .attr('font-size','6pt')
+          .style("fill", 'black')
+    }
+
 let values = [];
 let currentYear=curYear;
 let playInterval;
-const slideDuration = 3000; // in milliseconds
+const slideDuration = 1000; // in milliseconds
 let autoRewind = true;
 
 const slider = $('#slider').slider({
   value: 0,
-       min: 1914,
-       max: 1990,
+       min: 1920,
+       max: 1991,
        step: 1,
        slide: function( event, ui ) {
-           d3.selectAll("svg").remove();
            currentYear = ui.value;
-           updateYear(currentYear);
+           changeColor(currentYear);
+           $('#showyear').val(currentYear)
+       },
+       change: function( event, ui ){
+         currentYear = ui.value;
+         changeColor(currentYear);
+         $('#showyear').val(currentYear)
        }
+
 }).slider("pips", {
   rest: 'label'
 })
@@ -206,7 +227,7 @@ const button = $( "#play" ).button({
        });
        playInterval = setInterval(function () {
            currentYear++;
-           if (currentYear > 1990) {
+           if (currentYear > 1991) {
                if (autoRewind) {
                    currentYear = 1914;
                }
@@ -215,8 +236,34 @@ const button = $( "#play" ).button({
                    return;
                }
            }
-           d3.selectAll("svg").remove();
-           updateYear(currentYear);
+           $('#showyear').val(currentYear)
+           changeColor(currentYear);
            $( "#slider" ).slider( "value", currentYear );
        }, slideDuration);
    });
+
+ $.handle = slider.find('.ui-slider-handle')
+ $(document).on('keyup keydown', function(e) {
+   if ( $.handle.hasClass('ui-state-focus') ) return;
+   if (e.which === 37 || e.which === 39 || e.which === 38 || e.which === 40) {
+     e.target = $.handle.get(0);
+     $.handle.triggerHandler(e);
+   }
+ });
+
+$('.onoffswitch-checkbox').change(function(){
+
+  if(this.checked){
+    curGender = femaleJSON;
+    arrangeDataset(curGender);
+    changeColor(currentYear);
+    $('.woman').css('visibility','visible');
+    $('.man').css('visibility','hidden');
+  } else {
+    curGender = maleJSON;
+    arrangeDataset(curGender);
+    changeColor(currentYear);
+    $('.man').css('visibility','visible');
+    $('.woman').css('visibility','hidden');
+  }
+})
