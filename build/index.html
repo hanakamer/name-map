@@ -5,8 +5,20 @@
     <title>Name Visualization</title>
   </head>
   <body>
+    <div class="onoffswitch-container">
+      <div class="man"></div>
+      <div class="onoffswitch">
+        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="myonoffswitch"/>
+        <label class="onoffswitch-label" for="myonoffswitch">
+            <span class="onoffswitch-inner"></span>
+            <span class="onoffswitch-switch"></span>
+        </label>
+      </div>
+      <div class="woman"></div>
+      <input id=showyear type="text" value="1920" readonly>
+    </div>
     <div id="container" style="position: relative; "></div>
-    <button id="play">Play</button>
+    <button id="play" >Play</button>
     <div id="slider"></div>
     <script src="./bundle.js"></script>
   </body>
