@@ -1,9 +1,10 @@
 require('d3');
-require('jquery-ui/slider');
-require('jquery-ui/button');
-require('jquery-ui/themes/base/jquery-ui.css');
-require('jquery-ui/themes/base/jquery.ui.theme.css');
-require('./jquery-ui-slider-pips.css')
+// require('jquery-ui/slider');
+require('jquery-ui/ui/widgets/button');
+require('jquery-ui/ui/widgets/slider');
+require('jquery-ui/themes/base/all.css');
+require('jquery-ui/themes/base/theme.css');
+require('./jquery-ui-slider-pips.css');
 require('./main.less');
 require('./jquery-ui-slider-pips.js');
 
